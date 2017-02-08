@@ -1,5 +1,5 @@
 # Keras Inception ResNet V2
-Keras implementation of Google's inception-resnet-v2 model with (**coming soon** ported weights)!
+Keras implementation of Google's inception-resnet-v2 model with (**coming soon**) ported weights!
 
 As described in:
 [Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning (Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, Alex Alemi)](https://arxiv.org/abs/1602.07261)
