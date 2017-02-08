@@ -8,7 +8,7 @@ Note this Keras implementation tries to follow the [tf.slim definition](https://
 
 Pre-Trained weights (**once they are ported**) for this Keras model can be found here (ported from the tf.slim ckpt): https://github.com/kentsommer/keras-inception-resnetV2/releases
 
-You can evaluate a sample image by performing the following (weights are downloaded automatically):
+You can evaluate a sample image by performing the following (weights **once they are ported** are downloaded automatically):
 * ```$ python evaluate_image.py```
 ```
 Loaded Model Weights!
