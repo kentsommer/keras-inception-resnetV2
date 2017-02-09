@@ -19,7 +19,7 @@ from keras.utils.data_utils import get_file
 # TF_WEIGHTS_PATH = 'https://github.com/kentsommer/keras-inceptionV4/releases/download/2.0/inception-v4_weights_tf_dim_ordering_tf_kernels.h5'
 
 def do_scale(x, scale):
-    y = x * scale
+    y = scale * x 
     return y 
 
 
@@ -34,6 +34,9 @@ def conv2d_bn(x, nb_filter, nb_row, nb_col,
         channel_axis = 1
     else:
         channel_axis = -1
+
+    if not normalize:
+        bias = True
     x = Convolution2D(nb_filter, nb_row, nb_col,
                       subsample=subsample,
                       border_mode=border_mode,
@@ -51,6 +54,8 @@ def block35(input, scale=1.0, activation_fn='relu'):
     else:
         channel_axis = -1
 
+    shortcut = input
+
     tower_conv = conv2d_bn(input, 32, 1, 1, activ_fn=activation_fn)
 
     tower_conv1_0 = conv2d_bn(input, 32, 1, 1, activ_fn=activation_fn)
@@ -62,11 +67,11 @@ def block35(input, scale=1.0, activation_fn='relu'):
 
     mixed = merge([tower_conv, tower_conv1_1, tower_conv2_2], mode='concat', concat_axis=channel_axis)
 
-    up = conv2d_bn(mixed, 320, 1, 1, activ_fn=None, normalize=False)
+    up = conv2d_bn(mixed, 320, 1, 1, activ_fn=False, normalize=False)
 
-    scaler = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
+    up = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
 
-    net = merge([input, scaler], mode='sum')
+    net = merge([shortcut, up], mode='sum')
 
     if activation_fn:
         net = Activation(activation_fn)(net)
@@ -79,6 +84,8 @@ def block17(input, scale=1.0, activation_fn='relu'):
     else:
         channel_axis = -1
 
+    shortcut = input
+
     tower_conv = conv2d_bn(input, 192, 1, 1, activ_fn=activation_fn)
 
     tower_conv1_0 = conv2d_bn(input, 128, 1, 1, activ_fn=activation_fn)
@@ -87,11 +94,11 @@ def block17(input, scale=1.0, activation_fn='relu'):
 
     mixed = merge([tower_conv, tower_conv1_2], mode='concat', concat_axis=channel_axis)
 
-    up = conv2d_bn(mixed, 1088, 1, 1, activ_fn=None, normalize=False)
+    up = conv2d_bn(mixed, 1088, 1, 1, activ_fn=False, normalize=False)
 
-    scaler = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
+    up = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
 
-    net = merge([input, scaler], mode='sum')
+    net = merge([shortcut, up], mode='sum')
 
     if activation_fn:
         net = Activation(activation_fn)(net)
@@ -104,6 +111,8 @@ def block8(input, scale=1.0, activation_fn='relu'):
     else:
         channel_axis = -1
 
+    shortcut = input
+
     tower_conv = conv2d_bn(input, 192, 1, 1, activ_fn=activation_fn)
 
     tower_conv1_0 = conv2d_bn(input, 192, 1, 1, activ_fn=activation_fn)
@@ -112,11 +121,11 @@ def block8(input, scale=1.0, activation_fn='relu'):
 
     mixed = merge([tower_conv, tower_conv1_2], mode='concat', concat_axis=channel_axis)
 
-    up = conv2d_bn(mixed, 2080, 1, 1, activ_fn=None, normalize=False)
+    up = conv2d_bn(mixed, 2080, 1, 1, activ_fn=False, normalize=False)
 
-    scaler = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
+    up = Lambda(do_scale, output_shape=K.int_shape(up)[1:], arguments={'scale':scale})(up)
 
-    net = merge([input, scaler], mode='sum')
+    net = merge([shortcut, up], mode='sum')
 
     if activation_fn:
         net = Activation(activation_fn)(net)
@@ -189,7 +198,7 @@ def inception_resnet_v2(num_classes, dropout_keep_prob, weights):
     tower_conv1_1 = conv2d_bn(tower_conv1_0, 256, 3, 3)
     tower_conv1_2 = conv2d_bn(tower_conv1_1, 384, 3, 3, subsample=(2,2), border_mode='valid')
 
-    tower_pool = AveragePooling2D((3, 3), strides=(2, 2), border_mode='valid')(net)
+    tower_pool = MaxPooling2D((3, 3), strides=(2, 2), border_mode='valid')(net)
 
     net = merge([tower_conv, tower_conv1_2, tower_pool], mode='concat', concat_axis=channel_axis)
 
@@ -216,12 +225,12 @@ def inception_resnet_v2(num_classes, dropout_keep_prob, weights):
     # 9 x block8
     for idx in xrange(9):
         net = block8(net, scale=0.20)
-    net = block8(net, activation_fn=None)
+    net = block8(net, activation_fn=False)
 
 
     # Logits
     net = conv2d_bn(net, 1536, 1, 1)
-    net = AveragePooling2D((8,8), strides=(2, 2), border_mode='valid')(net)
+    net = AveragePooling2D((8,8), border_mode='valid')(net)
 
     net = Flatten()(net)
     net = Dropout(dropout_keep_prob)(net)
@@ -236,7 +245,7 @@ def inception_resnet_v2(num_classes, dropout_keep_prob, weights):
 
     return model
 
-def create_model(num_classes=1001, dropout_keep_prob=0.2, weights=None):
+def create_model(num_classes=1001, dropout_keep_prob=0.8, weights=None):
 	return inception_resnet_v2(num_classes, dropout_keep_prob, weights)
 
 
